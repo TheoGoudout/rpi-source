@@ -187,17 +187,25 @@ def check_diskspace(dir):
 
 # see if gcc major.minor version matches the one used to build the running kernel
 def check_gcc():
-    cmd = 'gcc -dumpversion'
+    cmd = 'gcc -dumpfullversion'
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     errcode = process.returncode
     if errcode:
-        debug("gcc version check failed: '%s' returned %d" %(cmd, errcode))
+        debug("gcc full version check failed: '%s' returned %d" %(cmd, errcode))
+        cmd = 'gcc -dumpversion'
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        errcode = process.returncode
+        if errcode:
+            debug("gcc version check failed: '%s' returned %d" %(cmd, errcode))
     gcc_ver = out.strip().decode('utf-8')
 
     with open('/proc/version', 'r') as f:
         proc_version = f.read()
-    gcc_ver_kernel = re.search(r'gcc version (\d\.\d\.\d)', proc_version)
+    gcc_ver_kernel = re.search(r'gcc version (\d+\.\d+\.\d+)', proc_version)
+    if not gcc_ver_kernel:
+        gcc_ver_kernel = re.search(r'gcc-\d+ \(.*?\) (\d+\.\d+\.\d+)', proc_version)
 
     if not gcc_ver or not gcc_ver_kernel:
         debug("gcc version check failed: could not extract version numbers")
